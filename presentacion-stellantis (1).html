@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stellantis · Gestión de Autopartes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg: #F3F4F6;
+  --surface: #FFFFFF;
+  --surface-glass: rgba(255,255,255,0.75);
+  --border: rgba(0,0,0,0.07);
+  --border-strong: rgba(0,0,0,0.12);
+  --text: #1B1B1E;
+  --text-secondary: #6B7280;
+  --text-tertiary: #9CA3AF;
+  --accent: #1E3A8A;
+  --accent-light: rgba(30,58,138,0.07);
+  --accent-border: rgba(30,58,138,0.18);
+  --red: #DC2626;
+  --red-bg: #FEE2E2;
+  --amber: #D97706;
+  --amber-bg: #FEF3C7;
+  --green: #059669;
+  --green-bg: #D1FAE5;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.08);
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+  --font: 'Inter', -apple-system, system-ui, sans-serif;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+*{ box-sizing:border-box; margin:0; padding:0; }
+html{ scroll-behavior:smooth; }
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--text);
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  text-shadow:
+    0 1px 2px rgba(0,0,0,0.42),
+    0 3px 6px rgba(0,0,0,0.20);
+}
+
+::selection{ background:rgba(30,58,138,0.14); }
+
+#deck{
+  position:relative; z-index:1;
+  height:100vh; height:100dvh;
+  overflow-y:scroll; overflow-x:hidden;
+  scroll-snap-type:y mandatory;
+}
+#deck::-webkit-scrollbar{ width:0; }
+
+.slide{
+  position:relative;
+  min-height:100vh; min-height:100dvh;
+  width:100%;
+  scroll-snap-align:start;
+  scroll-snap-stop:always;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding: 72px 80px;
+}
+@media (max-width:900px){ .slide{ padding:56px 28px; } }
+
+/* ─── Rail ─── */
+#rail{
+  position:fixed; top:50%; right:20px; transform:translateY(-50%);
+  z-index:50; display:flex; flex-direction:column; gap:14px;
+}
+.rail-dot{
+  width:7px; height:7px; border-radius:50%;
+  background:rgba(0,0,0,0.18);
+  cursor:pointer; transition:all .35s var(--ease-out);
+  position:relative;
+}
+.rail-dot::after{
+  content:attr(data-label);
+  position:absolute; right:18px; top:50%; transform:translateY(-50%);
+  font-size:11px; font-weight:500;
+  color:var(--text-secondary); white-space:nowrap;
+  opacity:0; pointer-events:none; transition:opacity .25s ease;
+}
+.rail-dot:hover::after{ opacity:1; }
+.rail-dot.active{
+  background:var(--accent);
+  transform:scale(1.5);
+  box-shadow:0 0 0 4px rgba(30,58,138,0.15);
+}
+@media (max-width:760px){ #rail{ display:none; } }
+
+#bar{
+  position:fixed; top:0; left:0; right:0; z-index:40;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 80px;
+  pointer-events:none;
+  background:linear-gradient(180deg, var(--bg) 50%, transparent);
+}
+@media (max-width:900px){ #bar{ padding:16px 28px; } }
+.bar-brand{
+  font-size:11px; font-weight:600; letter-spacing:0.03em;
+  color:var(--text-secondary); text-transform:uppercase;
+  display:flex; align-items:center; gap:10px;
+}
+.bar-brand .mark{
+  width:20px; height:20px; border-radius:6px;
+  background:var(--accent); display:flex; align-items:center; justify-content:center;
+}
+.bar-brand .mark svg{ width:12px; height:12px; fill:#fff; }
+.bar-index{
+  font-size:12px; font-weight:500; color:var(--text-secondary);
+}
+.bar-index b{ color:var(--text); font-weight:600; }
+
+h1,h2,h3{ font-weight:700; letter-spacing:-0.02em; line-height:1.1; color:var(--text);
+  text-shadow:
+    0 1px 3px rgba(0,0,0,0.30),
+    0 4px 8px rgba(0,0,0,0.16),
+    0 8px 16px rgba(0,0,0,0.08);
+}
+.section-label{
+  font-size:11px; font-weight:600; letter-spacing:0.06em;
+  text-transform:uppercase; color:var(--accent);
+  display:flex; align-items:center; gap:10px; margin-bottom:18px;
+}
+.section-label::before{
+  content:''; width:22px; height:2px; background:var(--accent); border-radius:2px;
+}
+.slide-title{
+  font-size:clamp(1.8rem, 4vw, 3.2rem);
+  font-weight:700;
+  letter-spacing:-0.03em;
+  line-height:1.08;
+  margin-bottom:14px;
+}
+.slide-sub{
+  font-size:clamp(0.95rem, 1.4vw, 1.1rem);
+  color:var(--text-secondary);
+  max-width:580px;
+  font-weight:400;
+  line-height:1.65;
+}
+
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  box-shadow:var(--shadow-sm);
+  transition: transform .3s var(--ease-out), box-shadow .35s var(--ease-out), border-color .3s ease;
+}
+.card:hover{
+  transform:translateY(-3px);
+  box-shadow:var(--shadow-md);
+  border-color:var(--border-strong);
+}
+
+.img-frame{
+  border-radius:var(--radius-md);
+  overflow:hidden;
+  background:var(--surface);
+  border:1px solid var(--border);
+  box-shadow:var(--shadow-sm);
+  transition: transform .4s var(--ease-out), box-shadow .4s var(--ease-out);
+  cursor:zoom-in;
+}
+.img-frame:hover{
+  transform:translateY(-3px);
+  box-shadow:var(--shadow-md);
+}
+.img-frame img{ width:100%; height:100%; object-fit:cover; display:block; }
+.img-frame .tag{
+  position:absolute; top:12px; left:12px; z-index:2;
+  font-size:10px; font-weight:600; letter-spacing:0.03em;
+  color:var(--text-secondary);
+  background:rgba(255,255,255,0.88);
+  backdrop-filter:blur(12px);
+  border:1px solid rgba(0,0,0,0.06);
+  padding:4px 12px; border-radius:100px;
+}
+
+/* ─── Bento ─── */
+.bento{ display:grid; gap:20px; }
+.b2{ grid-template-columns:1fr 1fr; }
+.b3{ grid-template-columns:repeat(3,1fr); }
+.b4{ grid-template-columns:repeat(4,1fr); }
+.b5{ grid-template-columns:repeat(5,1fr); }
+@media (max-width:880px){ .b2,.b3,.b4,.b5{ grid-template-columns:1fr; } }
+
+/* ─── Timeline ─── */
+.tl{ display:flex; align-items:center; justify-content:space-between; gap:0; margin-top:44px; width:100%; max-width:720px; }
+.tl-step{ display:flex; flex-direction:column; align-items:center; gap:5px; position:relative; flex:1; }
+.tl-step .tl-dot{
+  width:10px; height:10px; border-radius:50%;
+  background:var(--accent); z-index:2;
+  box-shadow:0 0 0 3px var(--accent-light);
+}
+.tl-step .tl-label{
+  font-size:9px; font-weight:600; color:var(--text-secondary);
+  text-align:center; line-height:1.3;
+  white-space:nowrap;
+}
+.tl-step .tl-line{
+  position:absolute; top:5px; right:-50%; width:100%;
+  height:2px; background:linear-gradient(90deg, var(--accent), var(--border));
+  z-index:0;
+}
+.tl-step:last-child .tl-line{ display:none; }
+@media (max-width:700px){ .tl{ flex-wrap:wrap; gap:12px; } .tl-step{ flex:0 0 45%; } .tl-step .tl-line{ display:none; } }
+
+/* ─── Slide 0 ─── */
+#slide-0{ justify-content:center; }
+.hero{ max-width:780px; }
+.hero h1{
+  font-size:clamp(2.6rem, 6.5vw, 5.2rem);
+  font-weight:800;
+  letter-spacing:-0.04em;
+  line-height:0.96;
+  margin-bottom:22px;
+}
+.hero h1 .gradient{
+  background:linear-gradient(135deg, #1E3A8A 0%, #3B5FC0 50%, #5B82E0 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.hero p{
+  font-size:clamp(0.95rem, 1.5vw, 1.15rem);
+  color:var(--text-secondary);
+  max-width:520px;
+  line-height:1.7;
+  font-weight:400;
+  margin-bottom:40px;
+}
+.hero-stats{ display:flex; gap:36px; flex-wrap:wrap; }
+.hero-stats .s{ display:flex; flex-direction:column; gap:3px; }
+.hero-stats .s .l{ font-size:10px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.05em; }
+.hero-stats .s .v{ font-size:14px; font-weight:600; color:var(--text); }
+.hero-orb{
+  position:absolute; top:45%; right:-8%; transform:translateY(-50%);
+  width:480px; height:480px;
+  background:radial-gradient(circle, rgba(30,58,138,0.05) 0%, transparent 65%);
+  border-radius:50%; pointer-events:none;
+}
+@media (max-width:980px){ .hero-orb{ display:none; } }
+
+/* ─── Slide 1 ─── */
+#slide-1{ justify-content:flex-start; padding:clamp(32px,4vh,56px) clamp(32px,5vw,72px); }
+#slide-1 .section-label, #slide-1 .slide-title, #slide-1 .slide-sub{ text-align:center; width:100%; }
+#slide-1 .slide-title{ font-size:clamp(2.4rem,5.5vw,4.2rem); margin-bottom:18px; }
+#slide-1 .slide-sub{ font-size:clamp(1.05rem,1.7vw,1.3rem); max-width:800px; margin:0 auto; }
+.reason-grid{ display:grid; grid-template-columns:1fr 1fr; gap:28px; margin-top:36px; flex:1; align-content:center; }
+.reason .tag{ justify-content:center; }
+@media (max-width:880px){ .reason-grid{ grid-template-columns:1fr; } }
+.reason{ padding:32px 30px; position:relative; overflow:hidden; }
+.reason .num{
+  font-size:4.2rem; font-weight:800; line-height:1;
+  color:rgba(30,58,138,0.05);
+  position:absolute; top:10px; right:18px;
+}
+.reason h4{ font-size:1.15rem; font-weight:600; margin-bottom:8px; }
+.reason p{ font-size:0.95rem; color:var(--text-secondary); line-height:1.7; }
+.reason .tag{
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:11px; font-weight:600; letter-spacing:0.03em;
+  color:var(--accent); margin-bottom:12px;
+}
+.reason code{ font-weight:500; color:var(--accent); }
+
+/* ─── Slide 2 ─── */
+.stack-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-top:32px; }
+@media (max-width:900px){ .stack-grid{ grid-template-columns:repeat(2,1fr); } }
+@media (max-width:500px){ .stack-grid{ grid-template-columns:1fr; } }
+.stack-item{
+  padding:24px 14px;
+  text-align:center;
+  display:flex; flex-direction:column; align-items:center;
+}
+.stack-item .logo-box{
+  width:64px; height:64px;
+  margin:0 auto 10px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:16px;
+  background:var(--accent-light);
+}
+.stack-item .logo-box img{ width:70%; height:70%; object-fit:contain; }
+.stack-item .logo-box .fl{ font-size:20px; font-weight:700; color:var(--accent); }
+.stack-item h4{ font-size:0.9rem; font-weight:600; margin-bottom:3px; }
+.stack-item .role{ font-size:9px; font-weight:600; color:var(--accent); text-transform:uppercase; letter-spacing:0.07em; margin-bottom:6px; }
+.stack-item p{ font-size:0.8rem; color:var(--text-secondary); line-height:1.6; }
+
+.lib-strip{
+  display:flex; gap:8px; flex-wrap:wrap; margin-top:20px;
+  padding:14px 20px;
+  justify-content:center;
+}
+.lib-strip span{
+  font-size:10px; font-weight:500; color:var(--text-secondary);
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:100px; padding:4px 14px;
+}
+
+/* ─── Slide 3 ─── */
+.rf-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:32px; }
+@media (max-width:880px){ .rf-grid{ grid-template-columns:1fr; } }
+.rf-card{ padding:28px 24px; }
+.rf-card .rfi{
+  width:42px; height:42px; border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  margin-bottom:14px;
+}
+.rf-card .rfi.b{ background:rgba(30,58,138,0.08); color:var(--accent); }
+.rf-card .rfi.a{ background:rgba(217,119,6,0.08); color:var(--amber); }
+.rf-card .rfi.g{ background:rgba(5,150,105,0.08); color:var(--green); }
+.rf-card h4{ font-size:0.95rem; font-weight:600; margin-bottom:6px; }
+.rf-card p{ font-size:0.85rem; color:var(--text-secondary); line-height:1.6; }
+.rf-card .det{
+  font-size:10px; font-weight:500; color:var(--accent);
+  background:var(--accent-light);
+  border:1px solid var(--accent-border);
+  border-radius:8px; padding:9px 12px; margin-top:12px;
+  font-family:'SF Mono','JetBrains Mono',monospace;
+}
+
+/* ─── Slide 4 ─── */
+.db-wrap{ display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:32px; }
+@media (max-width:880px){ .db-wrap{ grid-template-columns:1fr; } }
+.tc{ padding:22px; }
+.tc .th{
+  font-size:10px; font-weight:600; letter-spacing:0.07em;
+  text-transform:uppercase; color:var(--accent);
+  margin-bottom:14px; display:flex; align-items:center; gap:8px;
+}
+.fd{ display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-size:12px; }
+.fd:last-child{ border-bottom:none; }
+.fd .n{ color:var(--text); font-weight:500; }
+.fd .t{ color:var(--text-secondary); font-size:11px; }
+.fd .k{ color:var(--amber); font-size:10px; }
+
+.et{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:18px; }
+@media (max-width:880px){ .et{ grid-template-columns:1fr; } }
+.et .e{ padding:16px; text-align:center; }
+.et .e .nm{ font-size:11px; font-weight:600; color:var(--text-secondary); margin-bottom:3px; }
+.et .e .nm .b{ color:var(--accent); font-family:'SF Mono','JetBrains Mono',monospace; font-size:9px; background:var(--accent-light); border-radius:4px; padding:1px 6px; }
+.et .e .cs{ font-size:10px; color:var(--text-tertiary); line-height:1.6; }
+
+/* ─── Slide 5 ─── */
+.import-bento{ display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:28px; }
+@media (max-width:880px){ .import-bento{ grid-template-columns:1fr; } }
+.import-card{ overflow:hidden; }
+.import-card .hd{
+  display:flex; align-items:center; gap:10px;
+  padding:16px 20px; border-bottom:1px solid var(--border);
+}
+.import-card .hd .dot{
+  width:8px; height:8px; border-radius:50%; flex-shrink:0;
+}
+.import-card .hd .dot.bl{ background:var(--accent); }
+.import-card .hd .dot.am{ background:var(--amber); }
+.import-card .hd h4{ font-size:13px; font-weight:600; }
+.import-card .hd .ext{
+  font-size:9px; font-weight:600; color:var(--text-secondary);
+  background:var(--bg); border:1px solid var(--border);
+  border-radius:6px; padding:2px 10px; margin-left:auto;
+}
+.import-card .bd{ padding:16px 20px; }
+.import-card .bd ul{ list-style:none; display:flex; flex-direction:column; gap:6px; }
+.import-card .bd ul li{
+  font-size:0.82rem; color:var(--text-secondary); line-height:1.5;
+  display:flex; align-items:flex-start; gap:8px;
+}
+.import-card .bd ul li .s{
+  font-size:8px; font-weight:700; color:var(--accent);
+  background:var(--accent-light); border-radius:4px;
+  padding:2px 6px; flex-shrink:0; margin-top:3px; font-family:'SF Mono','JetBrains Mono',monospace;
+}
+.import-card .bd ul li code{
+  font-size:0.85em; color:var(--accent);
+  background:var(--accent-light); padding:1px 4px; border-radius:3px;
+  font-family:'SF Mono','JetBrains Mono',monospace;
+}
+
+/* ─── Slide 6 ─── */
+.algo-bento{ display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:32px; align-items:start; }
+@media (max-width:880px){ .algo-bento{ grid-template-columns:1fr; } }
+.algo-st{ display:flex; flex-direction:column; }
+.algo-st .step{
+  display:grid; grid-template-columns:40px 1fr; gap:14px;
+  padding:18px 0; border-bottom:1px solid var(--border);
+}
+.algo-st .step:last-child{ border-bottom:none; }
+.algo-st .step .nu{
+  font-size:11px; font-weight:700; color:var(--accent);
+  display:flex; align-items:flex-start; padding-top:2px;
+}
+.algo-st .step h4{ font-size:0.92rem; font-weight:600; margin-bottom:3px; }
+.algo-st .step p{ font-size:0.82rem; color:var(--text-secondary); line-height:1.6; }
+.algo-st .step code{
+  font-size:0.82em; color:var(--accent);
+  background:var(--accent-light); padding:1px 5px; border-radius:4px;
+  font-family:'SF Mono','JetBrains Mono',monospace;
+}
+.tag-strip{ display:flex; gap:6px; margin-top:12px; flex-wrap:wrap; }
+.tag-strip span{
+  font-size:9px; font-weight:500; color:var(--text-secondary);
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:100px; padding:3px 10px;
+}
+
+/* ─── Slide 7 ─── */
+.kpi-strip{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+@media (max-width:880px){ .kpi-strip{ grid-template-columns:repeat(2,1fr); } }
+.kp{ padding:16px 18px; text-align:center; }
+.kp .v{ font-size:1.7rem; font-weight:700; letter-spacing:-0.02em; }
+.kp .l{ font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary); margin-top:3px; }
+.kp.crit .v{ color:var(--red); }
+.kp.warn .v{ color:var(--amber); }
+.kp.ok .v{ color:var(--green); }
+.kp.info .v{ color:var(--accent); }
+
+.stats-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:18px; }
+@media (max-width:880px){ .stats-row{ grid-template-columns:1fr; } }
+.sc{ padding:16px; text-align:center; }
+.sc .big{ font-size:26px; font-weight:700; letter-spacing:-0.03em; }
+.sc .lb{ font-size:10px; color:var(--text-secondary); margin-top:2px; }
+
+/* ─── Slide 8 ─── */
+#slide-8{ justify-content:center; align-items:center; text-align:center; }
+.closing-title{ font-size:clamp(1.8rem, 4.5vw, 3.6rem); font-weight:700; letter-spacing:-0.03em; margin-bottom:14px; }
+.closing-title .hl{
+  background:linear-gradient(135deg, #1E3A8A 0%, #3B5FC0 50%, #5B82E0 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.closing-links{ display:flex; gap:14px; margin-top:36px; flex-wrap:wrap; justify-content:center; }
+.link-btn{
+  display:inline-flex; align-items:center; gap:10px;
+  padding:13px 26px; border-radius:100px;
+  font-size:13px; font-weight:600; letter-spacing:0.01em;
+  text-decoration:none;
+  transition: all .3s var(--ease-out);
+  cursor:pointer;
+}
+.link-btn.primary{
+  background:var(--accent); color:#fff;
+}
+.link-btn.primary:hover{
+  box-shadow:0 8px 24px rgba(30,58,138,0.3);
+  transform:translateY(-2px);
+}
+.link-btn.ghost{
+  background:var(--surface); color:var(--text);
+  border:1px solid var(--border-strong);
+}
+.link-btn.ghost:hover{
+  border-color:var(--accent); color:var(--accent);
+  transform:translateY(-2px);
+}
+
+.scroll-cue{
+  position:absolute; bottom:24px; left:50%; transform:translateX(-50%);
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  font-size:9px; font-weight:600; letter-spacing:0.07em;
+  color:var(--text-tertiary); text-transform:uppercase;
+}
+.scroll-cue .bar{
+  width:1px; height:24px;
+  background:linear-gradient(180deg, var(--accent), transparent);
+  animation:sp 2s ease-in-out infinite;
+}
+@keyframes sp{ 0%,100%{ opacity:0.15; } 50%{ opacity:1; } }
+
+/* ─── Lightbox ─── */
+.lightbox{
+  position:fixed; inset:0; z-index:999;
+  background:rgba(0,0,0,0.75);
+  backdrop-filter:blur(8px);
+  display:none; align-items:center; justify-content:center;
+  padding:40px;
+  cursor:zoom-out;
+  animation:lb-in .3s var(--ease-out);
+}
+.lightbox.open{ display:flex; }
+.lightbox img{
+  max-width:90vw; max-height:90vh;
+  border-radius:var(--radius-lg);
+  box-shadow:0 20px 60px rgba(0,0,0,0.3);
+  object-fit:contain;
+}
+@keyframes lb-in{ from{ opacity:0; transform:scale(0.92); } to{ opacity:1; transform:scale(1); } }
+.lightbox .close-lb{
+  position:absolute; top:20px; right:24px;
+  width:40px; height:40px; border-radius:50%;
+  background:rgba(255,255,255,0.15);
+  border:none; color:#fff; font-size:22px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:background .2s;
+}
+.lightbox .close-lb:hover{ background:rgba(255,255,255,0.25); }
+
+/* ─── Reveal system ─── */
+.r{ opacity:0; transform:translateY(18px); transition: opacity .6s var(--ease-out), transform .6s var(--ease-out); }
+.r.vis{ opacity:1; transform:translateY(0); }
+
+.img-frame img{ opacity:0; transition: opacity .5s var(--ease-out); }
+.img-frame img.loaded{ opacity:1; }
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; }
+  .r{ opacity:1; transform:none; }
+}
+
+:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+</style>
+</head>
+<body>
+
+<div id="bar">
+  <div class="bar-brand">
+    <div class="mark"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="2" fill="#fff"/><path d="M5 8h6M8 5v6" stroke="#1E3A8A" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+    Stellantis · Autopartes
+  </div>
+  <div class="bar-index"><b id="idxCurrent">01</b> / 08</div>
+</div>
+
+<div id="rail">
+  <div class="rail-dot" data-target="0" data-label="Portada"></div>
+  <div class="rail-dot" data-target="1" data-label="¿Por qué Desktop?"></div>
+  <div class="rail-dot" data-target="2" data-label="Stack"></div>
+  <div class="rail-dot" data-target="3" data-label="Requisitos"></div>
+  <div class="rail-dot" data-target="4" data-label="Base de Datos"></div>
+  <div class="rail-dot" data-target="5" data-label="Importación"></div>
+  <div class="rail-dot" data-target="6" data-label="Back End"></div>
+  <div class="rail-dot" data-target="7" data-label="Cierre"></div>
+</div>
+
+<div id="deck">
+
+  <!-- ═══ SLIDE 0 — PORTADA ═══ -->
+  <section class="slide" id="slide-0">
+    <div class="hero-orb"></div>
+    <div class="hero">
+      <h1 class="r">Stellantis<br><span class="gradient">Gestión de Autopartes</span></h1>
+      <p class="r">Una aplicación de escritorio que transforma el caos de contenedores, planos y flujos diarios en un plan de apertura inteligente — calculado, no adivinado.</p>
+      <div class="hero-stats r">
+        <div class="s"><span class="l">Stack</span><span class="v">Python · Flask · Pywebview</span></div>
+        <div class="s"><span class="l">Tipo</span><span class="v">Aplicación de escritorio</span></div>
+        <div class="s"><span class="l">Núcleo</span><span class="v">Lógica de Back End</span></div>
+      </div>
+      <div class="tl r">
+        <div class="tl-step">
+          <div class="tl-dot"></div>
+          <div class="tl-label">Importar<br>Fuentes A+B</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="tl-step">
+          <div class="tl-dot"></div>
+          <div class="tl-label">Cruzar<br>inventarios</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="tl-step">
+          <div class="tl-dot"></div>
+          <div class="tl-label">Calcular<br>déficit</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="tl-step">
+          <div class="tl-dot"></div>
+          <div class="tl-label">Priorizar<br>contenedores</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="tl-step">
+          <div class="tl-dot"></div>
+          <div class="tl-label">Exportar<br>plan PDF</div>
+        </div>
+      </div>
+    </div>
+    <div class="scroll-cue"><span>Desplazar</span><div class="bar"></div></div>
+  </section>
+
+  <!-- ═══ SLIDE 1 — ¿POR QUÉ DESKTOP APP? ═══ -->
+  <section class="slide" id="slide-1">
+    <div class="section-label r">Arquitectura</div>
+    <h2 class="slide-title r">¿Por qué una aplicación<br>de escritorio?</h2>
+    <p class="slide-sub r">A diferencia de un website, esta herramienta fue concebida como app de escritorio nativa. El navegador es la interfaz; toda la lógica corre localmente.</p>
+    <div class="reason-grid r">
+      <div class="reason card">
+        <div class="num">01</div>
+        <div class="tag">⚡ Sin servidor externo</div>
+        <h4>Ejecución 100% local</h4>
+        <p>Flask corre en <code>localhost:7777</code> embebido en la app. Sin latencia, sin downtime, sin infraestructura cloud que administrar.</p>
+      </div>
+      <div class="reason card">
+        <div class="num">02</div>
+        <div class="tag">🔒 Privacidad de datos</div>
+        <h4>Datos sensibles en planta</h4>
+        <p>SQLite reside en el mismo equipo. Los archivos de planta con precios y flujos nunca abandonan la red local. Sin subida a la nube.</p>
+      </div>
+      <div class="reason card">
+        <div class="num">03</div>
+        <div class="tag">📦 Sin conexión requerida</div>
+        <h4>Offline-first</h4>
+        <p>Una vez instalado, funciona sin internet. Ideal para entornos de planta con conectividad limitada o intermitente.</p>
+      </div>
+      <div class="reason card">
+        <div class="num">04</div>
+        <div class="tag">🖥️ Ventana nativa</div>
+        <h4>Experiencia de escritorio</h4>
+        <p>Pywebview crea una ventana sin barras de navegación, sin URLs visibles. Se siente como una aplicación nativa — porque lo es.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ SLIDE 2 — STACK TECNOLÓGICO ═══ -->
+  <section class="slide" id="slide-2">
+    <div class="section-label r">Tecnología</div>
+    <h2 class="slide-title r">Stack tecnológico</h2>
+    <p class="slide-sub r">Backend Python embebido, sin servidores externos, sin instalación manual. Todo se auto-instala al primer inicio mediante <code style="font-size:0.82em;color:var(--accent);background:var(--accent-light);padding:1px 5px;border-radius:4px;">verificar_e_instalar_dependencias()</code>.</p>
+    <div class="stack-grid r">
+      <div class="stack-item card">
+        <div class="logo-box"><img src="logos/python.svg" alt="Python" onerror="fl(this,'Py')"></div>
+        <h4>Python</h4>
+        <div class="role">Lenguaje base</div>
+        <p>Motor completo: lógica de negocio, parsing Excel y priorización de contenedores.</p>
+      </div>
+      <div class="stack-item card">
+        <div class="logo-box"><img src="logos/flask.svg" alt="Flask" onerror="fl(this,'Fl')"></div>
+        <h4>Flask</h4>
+        <div class="role">Servidor API</div>
+        <p>Endpoints REST: importación, consultas, plan de apertura y exportación PDF.</p>
+      </div>
+      <div class="stack-item card">
+        <div class="logo-box"><img src="logos/pywebview.svg" alt="Pywebview" onerror="fl(this,'Pw')"></div>
+        <h4>Pywebview</h4>
+        <div class="role">Ventana nativa</div>
+        <p>Puente JS ↔ Python para exportar PDF/JSON. Sin chromedriver, sin electron.</p>
+      </div>
+      <div class="stack-item card">
+        <div class="logo-box"><img src="logos/pandas.svg" alt="Pandas" onerror="fl(this,'Pd')"></div>
+        <h4>Pandas</h4>
+        <div class="role">Procesamiento</div>
+        <p>Lee, normaliza y filtra las planillas Excel/.xlsm de ambas fuentes de datos.</p>
+      </div>
+      <div class="stack-item card">
+        <div class="logo-box"><img src="logos/sqlite.svg" alt="SQLite" onerror="fl(this,'Sq')"></div>
+        <h4>SQLite</h4>
+        <div class="role">Persistencia</div>
+        <p>Base embebida en un único archivo. Sin servidor, sin migraciones, sin configuración.</p>
+      </div>
+    </div>
+    <div class="lib-strip card r">
+      <span>Openpyxl</span>
+      <span>Xlrd</span>
+      <span>Reportlab</span>
+      <span>Werkzeug</span>
+      <span>PyInstaller</span>
+    </div>
+  </section>
+
+  <!-- ═══ SLIDE 3 — 3 REQUISITOS FUNCIONALES ═══ -->
+  <section class="slide" id="slide-3">
+    <div class="section-label r">Requisitos del sistema</div>
+    <h2 class="slide-title r">Tres requisitos funcionales</h2>
+    <p class="slide-sub r">El MVP se sostiene sobre tres pilares que cubren el ciclo completo: acceso seguro, ingreso de datos y procesamiento inteligente.</p>
+    <div class="rf-grid r">
+      <div class="rf-card card">
+        <div class="rfi b">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <h4>RF1 · Login y autenticación</h4>
+        <p>Control de acceso con usuarios y roles. Contraseñas hasheadas con <b>Werkzeug</b>. Sesión con nombre y rol del operador.</p>
+        <div class="det"><code>/api/login</code> · <code>check_password_hash</code> · Admin / Supervisor</div>
+      </div>
+      <div class="rf-card card">
+        <div class="rfi a">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <h4>RF2 · Importación de archivos</h4>
+        <p>Dos fuentes con formatos distintos: Excel de planta (.xlsx) y planilla proveedor (.xlsm). Cada una con su pipeline de validación.</p>
+        <div class="det"><code>/procesar</code> (Fuente A) · <code>/procesar_piezas</code> (Fuente B)</div>
+      </div>
+      <div class="rf-card card">
+        <div class="rfi g">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <h4>RF3 · Cruce de datos</h4>
+        <p>Corazón de la app: cruza inventario con necesidades de producción. Back end que maximiza cobertura de déficit con priorización inteligente.</p>
+        <div class="det"><code>PLANO ↔ Ref</code> · Priorización global · Máx 12 contenedores/día</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ SLIDE 4 — BASE DE DATOS ═══ -->
+  <section class="slide" id="slide-4">
+    <div class="section-label r">Modelo de datos</div>
+    <h2 class="slide-title r">Base de datos</h2>
+    <p class="slide-sub r">SQLite embebido, sin migraciones. Cada importación reemplaza las tablas por completo para garantizar que el plan se calcule sobre el último estado disponible.</p>
+    <div class="db-wrap r">
+      <div class="tc card">
+        <div class="th">📦 inventario — Fuente A</div>
+        <div class="fd"><span class="n">NUM_CONTENEDOR</span><span class="t">TEXT</span></div>
+        <div class="fd"><span class="n">PTO_DESCARGA</span><span class="t">TEXT</span></div>
+        <div class="fd"><span class="n">PLANO</span><span class="t">TEXT <span class="k">FK → piezas.Ref</span></span></div>
+        <div class="fd"><span class="n">DESC_PLANO</span><span class="t">TEXT</span></div>
+        <div class="fd"><span class="n">CANTIDAD</span><span class="t">INTEGER</span></div>
+      </div>
+      <div class="tc card">
+        <div class="th">🔧 piezas — Fuente B</div>
+        <div class="fd"><span class="n">Ref</span><span class="t">TEXT <span class="k">PK</span></span></div>
+        <div class="fd"><span class="n">Designação</span><span class="t">TEXT</span></div>
+        <div class="fd"><span class="n">Flujo Espe / Dársena</span><span class="t">TEXT</span></div>
+        <div class="fd"><span class="n">MAG + BDL</span><span class="t">REAL (stock)</span></div>
+        <div class="fd"><span class="n">flujo_hoy / flujo_mañana</span><span class="t">REAL</span></div>
+      </div>
+    </div>
+    <div class="et r">
+      <div class="e card"><div class="nm">📋 plan_apertura <span class="b">histórico</span></div><div class="cs">fecha · prioridad · contenedor · déficit · cobertura · estado</div></div>
+      <div class="e card"><div class="nm">✅ aperturas <span class="b">registro</span></div><div class="cs">fecha · contenedor · hora · usuario</div></div>
+      <div class="e card"><div class="nm">👥 usuarios <span class="b">seguridad</span></div><div class="cs">usuario · password_hash · nombre · rol</div></div>
+    </div>
+  </section>
+
+  <!-- ═══ SLIDE 5 — IMPORTACIÓN ═══ -->
+  <section class="slide" id="slide-5">
+    <div class="section-label r">Ingreso de datos</div>
+    <h2 class="slide-title r">Importación de fuentes</h2>
+    <p class="slide-sub r">El sistema ingiere datos de dos fuentes completamente distintas. Cada una atraviesa su propio pipeline de validación, limpieza y normalización antes de persistir.</p>
+    <div class="import-bento r">
+      <div class="import-card card">
+        <div class="hd"><span class="dot bl"></span><h4>Fuente A — Planta</h4><span class="ext">.xlsx</span></div>
+        <div class="img-frame" style="margin:0 16px 12px;position:relative;border-radius:10px;">
+          <img src="import-a.png" alt="Importación Fuente A" style="border-radius:10px;" onclick="openLightbox(this.src)">
+          <span class="tag" style="position:absolute;top:10px;left:10px;">Fuente A — Planta</span>
+        </div>
+        <div class="bd" style="padding-top:0;">
+          <ul>
+            <li><span class="s">1</span> Lee el Excel con <code>pd.read_excel(engine='openpyxl')</code></li>
+            <li><span class="s">2</span> Normaliza columnas a mayúsculas</li>
+            <li><span class="s">3</span> Filtra: <code>DISPONIBLE=SI</code> · <code>EN PLANTA=SI</code> · <code>PAGADO=SI</code></li>
+            <li><span class="s">4</span> Guarda en <code>inventario</code> con <code>if_exists='replace'</code></li>
+          </ul>
+        </div>
+      </div>
+      <div class="import-card card">
+        <div class="hd"><span class="dot am"></span><h4>Fuente B — Proveedor</h4><span class="ext">.xlsm</span></div>
+        <div class="img-frame" style="margin:0 16px 12px;position:relative;border-radius:10px;">
+          <img src="import-b.png" alt="Importación Fuente B" style="border-radius:10px;" onclick="openLightbox(this.src)">
+          <span class="tag" style="position:absolute;top:10px;left:10px;">Fuente B — Proveedor</span>
+        </div>
+        <div class="bd" style="padding-top:0;">
+          <ul>
+            <li><span class="s">1</span> Detecta hoja por score heurístico: <code>Visão Geral</code> &gt; Geral &gt; Base</li>
+            <li><span class="s">2</span> Mapea columnas: <code>Ref</code>, <code>Designação</code>, <code>MAG+BDL</code></li>
+            <li><span class="s">3</span> Identifica flujo hoy/mañana por matching de fecha (multi-formato)</li>
+            <li><span class="s">4</span> Guarda en <code>piezas</code> con <code>if_exists='replace'</code></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ SLIDE 6 — BACK END ═══ -->
+  <section class="slide" id="slide-6">
+    <div class="section-label r">Lógica de negocio</div>
+    <h2 class="slide-title r">Lógica de Back End</h2>
+        <p class="slide-sub r">La ruta <code style="color:var(--accent);font-weight:500;">/plan_apertura</code> decide qué 12 contenedores abrir hoy, maximizando la cobertura global del déficit.</p>
+    <div class="algo-bento r">
+      <div class="card algo-st" style="padding:4px 20px;">
+        <div class="step"><div class="nu">01</div><div><h4>Cruce de fuentes</h4><p>Join <code>piezas</code> (stock + flujo) con <code>inventario</code> (contenedores por <code>PLANO = Ref</code>).</p></div></div>
+        <div class="step"><div class="nu">02</div><div><h4>Cálculo de déficit</h4><p><code>deficit = (flujo_hoy + flujo_manana) - stock</code>. Solo piezas con déficit positivo continúan.</p></div></div>
+        <div class="step"><div class="nu">03</div><div><h4>Urgencia y cobertura</h4><p><code>urgencia = deficit / necesidad_total</code>. <code>cobertura_horas = stock / (total_need / 16h)</code> — base del semáforo.</p></div></div>
+        <div class="step"><div class="nu">04</div><div><h4>Pool global + Priorización</h4><p>De todos los contenedores, elige el de mayor ganancia: <code>min(cantidad, deficit_restante) x urgencia</code>. Hasta 12.</p></div></div>
+        <div class="step"><div class="nu">05</div><div><h4>Priorización final</h4><p>Orden de selección = prioridad. Estado: <span style="color:var(--red);font-weight:600;">rojo</span> (&lt;2h), <span style="color:var(--amber);font-weight:600;">ámbar</span> (2-5h), <span style="color:var(--green);font-weight:600;">verde</span> (&gt;5h).</p></div></div>
+      </div>
+      <div>
+        <div class="img-frame" style="position:relative;">
+          <img src="dashboard-ui.png" alt="Plan de apertura" style="border-radius:var(--radius-md);" onclick="openLightbox(this.src)">
+          <span class="tag" style="position:absolute;top:14px;left:14px;">Plan generado</span>
+        </div>
+        <div class="tag-strip">
+          <span>← JOIN inventario ⋈ piezas</span>
+          <span>→ Déficit por pieza</span>
+          <span>← Priorización: pool global</span>
+          <span>→ Top 12 priorizados</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ SLIDE 7 — CIERRE ═══ -->
+  <section class="slide" id="slide-7">
+    <div class="section-label r" style="justify-content:center;">Cierre</div>
+    <h2 class="closing-title r">De una planilla manual<br><span class="hl">a un plan calculado.</span></h2>
+    <p class="slide-sub r" style="margin:0 auto;">Una herramienta propia, construida de punta a punta, que reemplaza decisiones intuitivas por un criterio explícito y auditable de priorización.</p>
+    <div class="closing-links r">
+      <a href="https://github.com/serlikfacundo07/stellantis.git" target="_blank" class="link-btn primary">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+        Repositorio en GitHub
+      </a>
+      <a href="https://www.mediafire.com/file/ktx83zducpfq4ww/StellantisApp.exe/file" target="_blank" class="link-btn ghost">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+        Descargar ejecutable
+      </a>
+    </div>
+  </section>
+
+</div>
+
+<!-- ─── Lightbox ─── -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+  <button class="close-lb" onclick="closeLightbox()">✕</button>
+  <img id="lb-img" src="" alt="Zoom">
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+(function(){
+  const slides = document.querySelectorAll('.slide');
+  const dots = document.querySelectorAll('.rail-dot');
+  const idxLabel = document.getElementById('idxCurrent');
+  const deck = document.getElementById('deck');
+
+  // ── Fallback logo ──
+  window.fl = function(el, label) {
+    el.outerHTML = '<span class="fl">' + label + '</span>';
+  };
+
+  // ── Lightbox ──
+  window.openLightbox = function(src) {
+    document.getElementById('lb-img').src = src;
+    document.getElementById('lightbox').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  };
+  window.closeLightbox = function(e) {
+    if(e && e.target !== e.currentTarget && e.target.className !== 'close-lb') return;
+    document.getElementById('lightbox').classList.remove('open');
+    document.body.style.overflow = '';
+  };
+  document.addEventListener('keydown', function(e) {
+    if(e.key === 'Escape') {
+      document.getElementById('lightbox').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  });
+
+  // ── GSAP slide transition ──
+  let currentSlide = 0;
+  let isAnimating = false;
+
+  function animateSlideIn(slide) {
+    const items = slide.querySelectorAll('.r');
+    if(items.length === 0) return;
+    
+    // Kill any existing tweens on these items
+    items.forEach(el => gsap.killTweensOf(el));
+    
+    // Set initial state
+    gsap.set(items, { opacity: 0, y: 24 });
+    
+    // Animate in with stagger
+    gsap.to(items, {
+      opacity: 1,
+      y: 0,
+      duration: 0.7,
+      ease: 'power2.out',
+      stagger: 0.1,
+      overwrite: 'auto'
+    });
+  }
+
+  function animateSlideOut(slide) {
+    const items = slide.querySelectorAll('.r');
+    if(items.length === 0) return;
+    gsap.to(items, {
+      opacity: 0,
+      y: -12,
+      duration: 0.35,
+      ease: 'power2.in',
+      overwrite: 'auto'
+    });
+  }
+
+  // ── IntersectionObserver for slide transitions ──
+  const slideIO = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const idx = Array.from(slides).indexOf(entry.target);
+      if(entry.isIntersecting) {
+        if(idx !== currentSlide && !isAnimating) {
+          isAnimating = true;
+          // Animate out previous slide
+          if(slides[currentSlide]) {
+            animateSlideOut(slides[currentSlide]);
+          }
+          // Animate in new slide after brief delay
+          setTimeout(() => {
+            animateSlideIn(entry.target);
+            currentSlide = idx;
+            isAnimating = false;
+          }, 150);
+        } else if(idx === currentSlide && currentSlide === 0) {
+          // First slide on initial load
+          animateSlideIn(entry.target);
+        }
+        setActive(idx);
+      }
+    });
+  }, { root: deck, threshold: 0.45 });
+
+  slides.forEach(s => slideIO.observe(s));
+
+  // Force initial animation for slide 0
+  setTimeout(() => {
+    animateSlideIn(slides[0]);
+  }, 200);
+
+  // ── Rail nav ──
+  function setActive(i){
+    dots.forEach((d,j)=> d.classList.toggle('active', j===i));
+    idxLabel.textContent = String(i+1).padStart(2,'0');
+  }
+
+  dots.forEach(dot => {
+    dot.addEventListener('click', () => {
+      const idx = parseInt(dot.dataset.target, 10);
+      slides[idx].scrollIntoView({behavior:'smooth'});
+    });
+  });
+
+  // ── Keyboard nav ──
+  window.addEventListener('keydown', (e) => {
+    const h = window.innerHeight;
+    let idx = Math.round(deck.scrollTop / h);
+    if(e.key === 'ArrowDown' || e.key === 'PageDown'){
+      e.preventDefault();
+      slides[Math.min(slides.length-1, idx+1)].scrollIntoView({behavior:'smooth'});
+    } else if(e.key === 'ArrowUp' || e.key === 'PageUp'){
+      e.preventDefault();
+      slides[Math.max(0, idx-1)].scrollIntoView({behavior:'smooth'});
+    } else if(e.key >= '1' && e.key <= '8'){
+      e.preventDefault();
+      const t = parseInt(e.key,10)-1;
+      if(t < slides.length) slides[t].scrollIntoView({behavior:'smooth'});
+    } else if(e.key === 'Home'){ e.preventDefault(); slides[0].scrollIntoView({behavior:'smooth'}); }
+    else if(e.key === 'End'){ e.preventDefault(); slides[slides.length-1].scrollIntoView({behavior:'smooth'}); }
+  });
+
+  // ── Lazy images ──
+  document.querySelectorAll('.img-frame img').forEach(img => {
+    if(img.complete) img.classList.add('loaded');
+    else img.addEventListener('load', () => img.classList.add('loaded'));
+  });
+
+  // ── Parallax orb ──
+  let ticking = false;
+  deck.addEventListener('scroll', () => {
+    if(!ticking){
+      requestAnimationFrame(() => {
+        const orb = document.querySelector('.hero-orb');
+        if(orb) orb.style.transform = `translate3d(0, ${deck.scrollTop * 0.12}px, 0)`;
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+
+})();
+</script>
+</body>
+</html>
